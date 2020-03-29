@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>贪吃蛇</title>
+  </head>
+  <!-- 贪吃蛇css样式 -->
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+    }
+    #container {
+      /* 没有底部和右边线条 */
+      border: 1px #ccc solid;
+      border-bottom: none;
+      border-right: none;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    #uls {
+      list-style: none;
+    }
+    #uls li {
+      /*li 没有顶部和左边线条 */
+      border: #ccc 1px solid;
+      border-top: none;
+      border-left: none;
+      float: left;
+    }
+    #container > div {
+      float: right;
+    }
+
+    #snake > div {
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      /*   */
+    }
+
+    .foods {
+      /* 贪吃蛇食物 */
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      background-color: red;
+    }
+    .snakeBody {
+      /* 蛇身颜色 */
+      opacity: 0.5;
+    }
+    .snakeImgS {
+      display: block;
+    }
+  </style>
+  <body>
+    <div id="container">
+      <ul id="uls"></ul>
+      <!-- ul为蛇的食物 -->
+      <button id="btn">开始游戏</button>
+      <button id="stop">暂停游戏</button>
+      <div id="jiFen">积分：0</div>
+      <div id="snake"></div>
+      <!-- 蛇的身体，食物，蛇头存放在id="snake"下的子div -->
+    </div>
+  </body>
+
+  <!-- js创建贪吃蛇 -->
+  <script>
+    //封装获取元素id和子元素的方法
+    function $id(id) {
+      return document.getElementById(id);
+    }
+    function $tagName(parent, child) {
+      return parent.getElementsByTagName(child);
+    }
+
+    //获取container等元素
+    var container = $id("container"),
+      time = null,
+      food = null,
+      index = 0, //积分数
+      uls = $id("uls"),
+      btn = $id("btn"), //按钮
+      snakes = $id("snake"), //获取蛇
+      snakeDatas = { speed: 300, code: 39 }; //蛇的运动速度和键盘值
+
+    //积分数
+    var jiFen = $id("jiFen");
+
+    //暂停游戏
+    var stop = $id("stop");
+
+    //获取蛇的身体部分
+    var snakeDiv = $tagName(snakes, "div");
+    //设置地图大小
+    var datas = { size: 30, x: 10, y: 10 }; //size:一个元素的宽和高的值，x:一行有多少个方格
+
+    //获取li，用以蛇的食物food随机函数
+    var lis = $tagName(uls, "li");
+
+    //创建初始化游戏函数
+    function init() {
+      createMap(); //调用地图函数
+    }
+
+    //创建地图函数
+    function createMap() {
+      container.style.width = (datas.size + 1) * datas.x + "px"; //左上边框
+
+      for (var i = 0; i < datas.x * datas.y; i++) {
+        //右下边框
+        var oli = document.createElement("li"); //创建li
+        oli.style.width = oli.style.height = datas.size + "px";
+
+        oli.index = i; // 不让食物和蛇身重合
+        uls.appendChild(oli); //把创建的li放到ul里
+      }
+      gameStart(); //初始化游戏
+    }
+
+    //游戏开始函数
+    function gameStart() {
+      btn.onclick = function() {
+        createSnakes(); //初始化蛇
+        createFood(); //蛇的食物
+        snakeMove(); //蛇开始移动
+        bindSnake(); //蛇上下左右移动
+      };
+    }
+
+    //暂停游戏
+    function gameStop() {
+      stop.onclick = function() {
+        clearInterval(time);
+      };
+    }
+    gameStop();
+
+    //创建贪吃蛇
+    function createSnakes() {
+      var oSnake = document.createElement("div");
+      oSnake.style.width = oSnake.style.height = datas.size + 1 + "px";
+      oSnake.index = 0;
+      snakes.appendChild(oSnake); //把创建的蛇放到div中
+
+      //蛇头变成图片
+      var snakeImg = document.createElement("img");
+      snakeImg.className = "snakeImgS";
+      snakeImg.src = "666.jpg";
+      snakeImg.style.width = snakeImg.style.height = datas.size + 1 + "px";
+      oSnake.appendChild(snakeImg);
+    }
+
+    //改变积分
+    function Num() {
+      index += 10;
+      jiFen.innerHTML = "积分" + index;
+    }
+
+    //蛇出地图时游戏结束
+    function isOut() {
+      for (var i = 0; i < lis.length; i++) {
+        if (pz(lis[i], snakeDiv[0])) {
+          return false; //如果蛇头碰撞到地图方格，则还有地图上，返回false
+        }
+      }
+      return true;
+    }
+
+    //蛇碰撞到自己身体时，游戏结束
+    function isSelf() {
+      for (var i = 1; i < snakeDiv.length; i++) {
+        if (pz(snakeDiv[0], snakeDiv[i])) {
+          return true; //蛇头碰到自己身体，为true，执行pz()函数
+        }
+      }
+      return false;
+    }
+
+    //贪吃蛇移动函数
+    function snakeMove() {
+      //定时器
+      time = setInterval(function() {
+        //游戏结束条件
+        if (isOut() || isSelf()) {
+          alert("game over");
+          clearInterval(time);
+        }
+
+        //初始化检测碰撞函数
+        if (pz(snakeDiv[0], food)) {
+          snakes.appendChild(food); //把食物吃掉变成蛇身
+          //food.className = "snakeBody";
+          createFood();
+          Num(); //初始化积分数
+        }
+
+        //把食物拼接到蛇身的后面
+        for (var i = snakeDiv.length - 1; i > 0; i--) {
+          snakeDiv[i].style.left = snakeDiv[i - 1].offsetLeft + "px";
+          snakeDiv[i].style.top = snakeDiv[i - 1].offsetTop + "px";
+          snakeDiv[i].index = snakeDiv[i - 1].index;
+        }
+        switch (
+          snakeDatas.code //设置蛇移动时键盘按键方向
+        ) {
+          case 37:
+            snakeDiv[0].style.left =
+              snakeDiv[0].offsetLeft - (datas.size + 1) + "px";
+            snakeDiv[0].index -= 1; //为了让食物不和蛇身重合
+            break;
+          case 38:
+            snakeDiv[0].style.top =
+              snakeDiv[0].offsetTop - (datas.size + 1) + "px";
+            snakeDiv[0].index -= datas.x;
+            break;
+          case 39:
+            snakeDiv[0].style.left =
+              snakeDiv[0].offsetLeft + (datas.size + 1) + "px";
+            snakeDiv[0].index += 1;
+            break;
+          case 40:
+            snakeDiv[0].style.top =
+              snakeDiv[0].offsetTop + (datas.size + 1) + "px";
+            snakeDiv[0].index += datas.x;
+            break;
+        }
+      }, snakeDatas.speed);
+    }
+
+    //创建食物food
+    function createFood() {
+      //不让食物和蛇身出现重合情况
+      var hrr = [];
+      for (var i = 0; i < lis.length; i++) {
+        if (isFilter(lis[i])) {
+          hrr.push(lis[i]);
+        }
+      }
+      function isFilter(li) {
+        for (var i = 0; i < snakeDiv.length; i++) {
+          if (li.index == snakeDiv[i].index) {
+            //如果蛇蛇身体的某一方块和li上方块重合，返回false
+            return false;
+          }
+        }
+        return true;
+      }
+
+      //随机数food
+      var random = Math.floor(Math.random() * (hrr.length - 1));
+
+      food = document.createElement("div");
+      food.className = "foods";
+
+      //随机色的函数-rgb
+      function getRandomColor() {
+        var rgb =
+          "rgb(" +
+          Math.floor(Math.random() * 255) +
+          "," +
+          Math.floor(Math.random() * 255) +
+          "," +
+          Math.floor(Math.random() * 255) +
+          ")";
+        return rgb;
+      }
+      //贪吃蛇的食物随机颜色
+      food.style.backgroundColor = getRandomColor();
+
+      food.style.width = food.style.height = datas.size + 1 + "px";
+
+      food.style.top = hrr[random].offsetLeft + "px"; //随机获得
+      food.style.left = hrr[random].offsetTop + "px";
+
+      container.appendChild(food);
+    }
+
+    //检测碰撞吃食物
+    function pz(el1, el2) {
+      //碰撞函数,el1是蛇身，el2是食物
+      var left1 = el1.offsetLeft; //浏览器到蛇身的距离
+      var right1 = el1.offsetLeft + el1.offsetWidth;
+      //浏览器到蛇身的距离+蛇身自身的宽度
+      var top1 = el1.offsetTop;
+      var bottom1 = el1.offsetTop + el1.offsetHeight;
+
+      var left2 = el2.offsetLeft;
+      var right2 = el2.offsetLeft + el2.offsetWidth;
+      var top2 = el2.offsetTop;
+      var bottom2 = el2.offsetTop + el2.offsetHeight;
+
+      //没有碰撞到为false,碰撞到为true
+      if (
+        right1 <= left2 ||
+        bottom1 <= top2 ||
+        left1 >= right2 ||
+        top1 >= bottom2
+      ) {
+        return false;
+      } else {
+        return true;
+      }
+    }
+
+    //改变蛇移动方向
+    function bindSnake() {
+      document.onkeydown = function(e) {
+        var e = window.event || e;
+        switch (e.keyCode) {
+          case 37:
+            snakeDatas.code = 37;
+            break;
+          case 38:
+            snakeDatas.code = 38;
+            break;
+          case 39:
+            snakeDatas.code = 39;
+            break;
+          case 40:
+            snakeDatas.code = 40;
+            break;
+        }
+      };
+    }
+    //初始化游戏函数
+    init();
+  </script>
+</html>

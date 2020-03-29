@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div id="container">
+      <div>1</div>
+      <div>2</div>
+      <div>3</div>
+      <div>4</div>
+    </div>
+    <style>
+      #container div {
+        position: absolute;
+        width: 50px;
+        height: 50px;
+        opacity: 0.5px;
+        line-height: 50px;
+        background: blue;
+        color: #fff;
+        text-align: center;
+        font-size: 24px;
+        top: 0;
+        left: 0;
+      }
+    </style>
+
+    <script>
+      var container = document.getElementById("container");
+      var oDiv = container.getElementsByTagName("div");
+      var width = oDiv[0].offsetWidth; //获取宽度，50px
+
+      // 使数字倒叙排列，4321
+      for (var i = 0; i < oDiv.length; i++) {
+        oDiv[i].style.left = (oDiv.length - 1 - i) * width + "px";
+      }
+
+      //键盘事件，获取左上右下
+      document.onkeydown = function(e) {
+        //使各个方块拼接起来
+        for (var i = oDiv.length - 1; i > 0; i--) {
+          oDiv[i].style.left = oDiv[i - 1].offsetLeft + "px";
+          oDiv[i].style.top = oDiv[i - 1].offsetTop + "px";
+        }
+
+        var e = window.event || e;
+        switch (e.keyCode) {
+          case 37:
+            oDiv[0].style.left = oDiv[0].offsetLeft - width + "px";
+            break;
+          case 38:
+            oDiv[0].style.top = oDiv[0].offsetTop - width + "px";
+            break;
+          case 39:
+            oDiv[0].style.left = oDiv[0].offsetLeft + width + "px";
+            break;
+          case 40:
+            oDiv[0].style.top = oDiv[0].offsetTop + width + "px";
+            break;
+        }
+      };
+    </script>
+  </body>
+</html>
